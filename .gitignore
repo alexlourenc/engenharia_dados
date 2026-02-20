@@ -1,0 +1,15 @@
+# Ambiente Virtual
+venv/
+.venv/
+env/
+
+# Dados (Não enviar para o Git)
+data/
+*.parquet
+*.csv
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.env
