@@ -9,8 +9,6 @@ Este projeto implementa um pipeline de Engenharia de Dados robusto para processa
 ### 📋 Objetivo
 O objetivo deste projeto é automatizar a ingestão e o processamento de chamados do JIRA para calcular o tempo de resolução em **horas úteis**, desconsiderando finais de semana e feriados nacionais.
 
-
-
 ### 🏗️ Arquitetura do Pipeline
 O projeto segue a **Arquitetura Medallion**, garantindo organização e rastreabilidade:
 
@@ -18,6 +16,8 @@ O projeto segue a **Arquitetura Medallion**, garantindo organização e rastreab
 * **Camada Silver**: Limpeza e normalização dos dados. Extração de campos aninhados (`assignee`, `timestamps`) e conversão para o formato **Parquet** visando performance e preservação de metadados.
 * **Camada Gold**: Aplicação de regras de negócio. Cálculo de SLA baseado na prioridade (High: 24h, Medium: 72h, Low: 120h), integrando com a **BrasilAPI** para identificação de feriados.
 * **Data Quality**: Auditoria automática de integridade, volumetria e validação de nulos ao final do processo.
+
+
 
 ### 🖥️ Dashboard e Visualização (Streamlit)
 O projeto inclui uma interface interativa para gestão de performance, permitindo:
@@ -37,11 +37,12 @@ O pipeline conta com um orquestrador central que valida cada etapa. Em execuçõ
 - **Auditoria**: Validação de 100% das regras de prioridade e integridade cronológica.
 
 ### 🚀 Como Executar
-1. Clone o repositório.
-2. Instale as dependências: `pip install -r requirements.txt`.
-3. Configure o arquivo `.env` na raiz do projeto.
-4. Execute o orquestrador: `python main.py`.
-5. Inicie o dashboard: `streamlit run app.py`.
+1. **Clone o repositório:** `git clone https://github.com/seu-usuario/jira-pipeline.git`
+2. **Configure o Ambiente Virtual:** `python -m venv venv` e ative-o (`.\venv\Scripts\activate` no Windows ou `source venv/bin/activate` no Linux/Mac).
+3. **Instale as dependências:** `pip install -r requirements.txt`
+4. **Configure o arquivo `.env`** na raiz do projeto com suas credenciais.
+5. **Execute o orquestrador:** `python main.py`
+6. **Inicie o dashboard:** `streamlit run app.py`
 
 ---
 
@@ -52,20 +53,35 @@ This project automates the ingestion and processing of JIRA tickets to calculate
 
 ### 🏗️ Pipeline Architecture
 The project follows the **Medallion Architecture**:
-* **Bronze Layer**: Raw ingestion from Azure Blob Storage.
-* **Silver Layer**: Cleaning and conversion to **Parquet**.
-* **Gold Layer**: SLA calculation based on priority, integrated with **BrasilAPI**.
-* **Data Quality**: Automated auditing of integrity and volume.
+* **Bronze Layer**: Raw ingestion from Azure Blob Storage using Service Principal authentication.
+* **Silver Layer**: Data cleaning, normalization, and conversion to **Parquet** format for performance.
+* **Gold Layer**: Business rules application and SLA calculation based on priority, integrated with **BrasilAPI**.
+* **Data Quality**: Automated auditing of integrity, volume, and null validation.
 
 ### 🖥️ Dashboard & Visualization (Streamlit)
-Includes an interactive interface for performance management:
+Interactive interface for performance management:
 - **Dynamic Filters**: Date Range, Issue Type, and Analyst.
 - **Trend Analysis**: Monthly SLA compliance tracking.
 - **Performance Ranking**: Automated analyst classification (Top Performer, Standard, Needs Support).
 
+### 🛠️ Technologies & Best Practices
+* **Python 3.x** and **Pandas** for data manipulation.
+* **Streamlit & Plotly** for visualization and interactive dashboards.
+* **PyArrow**: Stable Parquet write engine.
+* **Security**: Use of environment variables (`.env`) and sensitive data protection via `.gitignore`.
+
 ### 📈 Execution Evidence & Quality
+The pipeline features a central orchestrator that validates each stage. In test runs:
 - **Data Funnel**: 1000 raw records ➡️ 990 valid records ➡️ 804 finalized tickets.
 - **Auditing**: 100% validation of priority rules and chronological integrity.
+
+### 🚀 How to Run
+1. **Clone the repository:** `git clone https://github.com/your-user/jira-pipeline.git`
+2. **Setup Virtual Environment:** `python -m venv venv` and activate it.
+3. **Install dependencies:** `pip install -r requirements.txt`
+4. **Configure the `.env` file** in the project root with your credentials.
+5. **Run the orchestrator:** `python main.py`
+6. **Launch the dashboard:** `streamlit run app.py`
 
 ---
 
