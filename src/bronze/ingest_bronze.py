@@ -1,39 +1,57 @@
 import os
-import json
+import logging
+from pathlib import Path
+from dotenv import load_dotenv
+from azure.identity import ClientSecretCredential
+from azure.storage.blob import BlobServiceClient
 
-def run_ingestion():
-    print("--- 🔍 Iniciando Ingestão Bronze (Local) ---")
-    
-    # Caminho definido na convenção
-    source_path = "data/bronze/bronze_issues.json"
-    
-    # 1. Verifica se o arquivo existe fisicamente
-    if not os.path.exists(source_path):
-        print(f"❌ ERRO: Arquivo não encontrado em: {os.path.abspath(source_path)}")
-        return
+# Configuração de Logging para monitorar a ingestão
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-    # 2. Tenta ler o conteúdo
+load_dotenv()
+
+def validate_env_vars():
+    """Valida se todas as variáveis de ambiente necessárias estão presentes."""
+    required_vars = ["ACCOUNT_URL", "CONTAINER_NAME", "BLOB_NAME", "AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET"]
+    missing = [var for var in required_vars if not os.getenv(var)]
+    if missing:
+        raise EnvironmentError(f"Variáveis ausentes no .env: {', '.join(missing)}")
+
+def ingest_bronze():
+    validate_env_vars()
+    
+    # Configurações de caminhos
+    base_dir = Path(__file__).resolve().parents[2]
+    target_path = base_dir / "data" / "bronze" / os.getenv("BLOB_NAME")
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
     try:
-        with open(source_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            
-        # 3. Validação de leitura (O "Saber se está lendo corretamente")
-        print(f"✅ Sucesso! O arquivo foi lido corretamente.")
+        # Autenticação
+        credential = ClientSecretCredential(
+            tenant_id=os.getenv("AZURE_TENANT_ID"),
+            client_id=os.getenv("AZURE_CLIENT_ID"),
+            client_secret=os.getenv("AZURE_CLIENT_SECRET")
+        )
+
+        blob_service_client = BlobServiceClient(os.getenv("ACCOUNT_URL"), credential=credential)
+        blob_client = blob_service_client.get_blob_client(
+            container=os.getenv("CONTAINER_NAME"), 
+            blob=os.getenv("BLOB_NAME")
+        )
+
+        logger.info(f"Iniciando download do blob: {os.getenv('BLOB_NAME')}")
         
-        # Se os dados forem uma lista, mostra quantos chamados existem
-        if isinstance(data, list):
-            print(f"📊 Total de registros encontrados: {len(data)}")
-            if len(data) > 0:
-                print(f"📋 Exemplo do primeiro registro: {data[0]}")
-        
-        # Se o JSON tiver uma chave pai (ex: 'issues')
-        elif isinstance(data, dict):
-            print(f"🔑 Chaves encontradas no JSON: {list(data.keys())}")
-            
-    except json.JSONDecodeError:
-        print("❌ ERRO: O arquivo existe, mas NÃO é um JSON válido (erro de formatação).")
+        with open(target_path, "wb") as f:
+            data = blob_client.download_blob()
+            f.write(data.readall())
+
+        logger.info(f"✅ Ingestão concluída! Arquivo salvo em: {target_path}")
+        return True
+
     except Exception as e:
-        print(f"❌ Ocorreu um erro inesperado: {e}")
+        logger.error(f"❌ Falha na ingestão: {str(e)}")
+        return False
 
 if __name__ == "__main__":
-    run_ingestion()
+    ingest_bronze()
