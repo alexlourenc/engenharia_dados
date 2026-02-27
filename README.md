@@ -37,7 +37,7 @@ O pipeline conta com um orquestrador central que valida cada etapa. Em execuçõ
 - **Auditoria**: Validação de 100% das regras de prioridade e integridade cronológica.
 
 ### 🚀 Como Executar
-1. **Clone o repositório:** `git clone https://github.com/seu-usuario/jira-pipeline.git`
+1. **Clone o repositório:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
 2. **Configure o Ambiente Virtual:** `python -m venv venv` e ative-o (`.\venv\Scripts\activate` no Windows ou `source venv/bin/activate` no Linux/Mac).
 3. **Instale as dependências:** `pip install -r requirements.txt`
 4. **Configure o arquivo `.env`** na raiz do projeto com suas credenciais.
@@ -76,7 +76,7 @@ The pipeline features a central orchestrator that validates each stage. In test 
 - **Auditing**: 100% validation of priority rules and chronological integrity.
 
 ### 🚀 How to Run
-1. **Clone the repository:** `git clone https://github.com/your-user/jira-pipeline.git`
+1. **Clone the repository:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
 2. **Setup Virtual Environment:** `python -m venv venv` and activate it.
 3. **Install dependencies:** `pip install -r requirements.txt`
 4. **Configure the `.env` file** in the project root with your credentials.
