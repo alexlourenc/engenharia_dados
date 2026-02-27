@@ -6,11 +6,15 @@ __pycache__/
 .env
 
 # --- Data Layer (Local Storage) / Camada de Dados (Armazenamento Local) ---
-# We ignore the data to keep the repository light and secure
-# Ignoramos os dados para manter o repositório leve e seguro
+# We ignore the data but keep the folder structure using .gitkeep
+# Ignoramos os dados mas mantemos a estrutura de pastas usando .gitkeep
 data/bronze/*
 data/silver/*
 data/gold/*
+
+# Do not ignore .gitkeep files to preserve directories
+# Não ignora os arquivos .gitkeep para preservar os diretórios
+!data/**/.gitkeep
 
 # --- Logs and Local Reports / Logs e Relatórios Locais ---
 *.log
