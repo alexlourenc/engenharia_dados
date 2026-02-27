@@ -1,15 +1,22 @@
-# Ambiente Virtual
-venv/
-.venv/
-env/
-
-# Dados (Não enviar para o Git)
-data/
-*.parquet
-*.csv
-*.json
-
-# Python
+# --- Python Environment / Ambiente Python ---
 __pycache__/
 *.py[cod]
+*$py.class
+.venv/
 .env
+
+# --- Data Layer (Local Storage) / Camada de Dados (Armazenamento Local) ---
+# We ignore the data to keep the repository light and secure
+# Ignoramos os dados para manter o repositório leve e seguro
+data/bronze/*
+data/silver/*
+data/gold/*
+
+# --- Logs and Local Reports / Logs e Relatórios Locais ---
+*.log
+*.csv
+*.parquet
+
+# --- OS generated files / Arquivos gerados pelo Sistema Operacional ---
+.DS_Store
+Thumbs.db
