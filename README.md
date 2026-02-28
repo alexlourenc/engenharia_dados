@@ -51,7 +51,7 @@ Antes de criar o ambiente, force o editor a usar a versão correta para evitar c
 
 ### 🚀 Como Executar
 1. **Clone o repositório:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Configure o Ambiente Virtual:** `python -m venv venv` e ative-o (`.\.venv\Scripts\Activate.ps1` no Windows ou `source venv/bin/activate` no Linux/Mac).
+2. **Configure o Ambiente Virtual:** `py -3.12 -m venv venv` e ative-o (`.\venv\Scripts\Activate.ps1` no Windows ou `source venv/bin/activate` no Linux/Mac).
 3. **Instale as dependências:** `pip install -r requirements.txt`
 4. **Configure o arquivo `.env`** na raiz do projeto com suas credenciais.
 5. **Execute o orquestrador:** `python main.py`
@@ -102,7 +102,7 @@ Before creating the environment, force the editor to use the correct version to 
 
 ### 🚀 How to Run
 1. **Clone the repository:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Configure the Virtual Environment:** `python -m venv venv` and activate it (`.\.venv\Scripts\Activate.ps1` on Windows or `source venv/bin/activate` on Linux/Mac).
+2. **Configure the Virtual Environment:** `py -3.12 -m venv venv` and activate it (`.\venv\Scripts\Activate.ps1` on Windows or `source venv/bin/activate` on Linux/Mac).
 3. **Install dependencies:** `pip install -r requirements.txt`
 4. **Configure the `.env` file** in the project root with your credentials.
 5. **Execute the orchestrator:** `python main.py`
