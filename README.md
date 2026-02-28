@@ -87,14 +87,18 @@ The pipeline features a central orchestrator that validates each stage. In test 
 
 ## 📂 Estrutura de Pastas / Project Structure
 ```text
-project-root/
-├── main.py                 # Orquestrador Central / Main Orchestrator
-├── app.py                  # Dashboard Interface (Streamlit)
-├── .env                    # Credenciais (Não versionado) / Credentials
-├── src/
-│   ├── bronze/             # Ingestão / Ingestion
-│   ├── silver/             # Transformação / Transformation
-│   ├── gold/               # Regras de Negócio / Business Rules
-│   ├── sla_calculation.py  # Motor de Cálculo / Calculation Engine
+PROJECT-ROOT/
+├── data/               # Armazenamento Local / Local Storage (Ignorado no Git)
+├── src/                # Código-fonte principal / Source Code
+│   ├── bronze/         # Ingestão (JSON Raw) / Ingestion
+│   ├── silver/         # Limpeza e Parquet / Cleaning & Parquet
+│   ├── gold/           # Regras de Negócio / Business Rules
+│   ├── sla_calculation.py   # Motor de Cálculo / Calculation Engine
 │   └── validate_pipeline.py # Auditoria de Dados / Data Auditing
-└── data/                   # Armazenamento Local / Local Storage (Git Ignored)
+├── .env                # Credenciais e Variáveis de ambiente (Sensitive data)
+├── .gitignore          # Proteção de arquivos sensíveis
+├── .python-version     # Versão fixa do Python (3.12)
+├── app.py              # Interface do Dashboard (Streamlit)
+├── main.py             # Orquestrador Central / Main Orchestrator
+├── README.md           # Documentação do projeto
+└── requirements.txt    # Dependências do projeto
