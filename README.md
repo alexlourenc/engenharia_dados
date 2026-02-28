@@ -36,14 +36,26 @@ O pipeline conta com um orquestrador central que valida cada etapa. Em execuçõ
 - **Funil de Dados**: Ingestão de 1000 registros ➡️ 990 registros válidos ➡️ 804 chamados finalizados.
 - **Auditoria**: Validação de 100% das regras de prioridade e integridade cronológica.
 
+## 🛠️ Guia de Configuração do Ambiente (Setup)
+
+Siga estas etapas na ordem exata para garantir a consistência do ambiente utilizando o **Python 3.12**.
+
+---
+
+### 1. Selecionar o Interpretador (VS Code)
+Antes de criar o ambiente, force o editor a usar a versão correta para evitar conflitos de cache:
+
+1. Pressione `Ctrl + Shift + P` (ou `Cmd + Shift + P` no Mac).
+2. Digite **`Python: Select Interpreter`**.
+3. Escolha **`Python 3.12.x`** na lista.
+
 ### 🚀 Como Executar
 1. **Clone o repositório:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Configure o Ambiente Virtual:** `python -m venv venv` e ative-o (`.\venv\Scripts\activate` no Windows ou `source venv/bin/activate` no Linux/Mac).
+2. **Configure o Ambiente Virtual:** `python -m venv venv` e ative-o (`.\.venv\Scripts\Activate.ps1` no Windows ou `source venv/bin/activate` no Linux/Mac).
 3. **Instale as dependências:** `pip install -r requirements.txt`
 4. **Configure o arquivo `.env`** na raiz do projeto com suas credenciais.
 5. **Execute o orquestrador:** `python main.py`
 6. **Inicie o dashboard:** `streamlit run app.py`
-
 ---
 
 ## 🇺🇸 English Version
@@ -75,13 +87,26 @@ The pipeline features a central orchestrator that validates each stage. In test 
 - **Data Funnel**: 1000 raw records ➡️ 990 valid records ➡️ 804 finalized tickets.
 - **Auditing**: 100% validation of priority rules and chronological integrity.
 
+## 🛠️ Environment Setup Guide
+
+Follow these steps in the exact order to ensure environment consistency using **Python 3.12**.
+
+---
+
+### 1. Select the Interpreter (VS Code)
+Before creating the environment, force the editor to use the correct version to avoid cache conflicts:
+
+1. Press `Ctrl + Shift + P` (or `Cmd + Shift + P` on Mac).
+2. Type **`Python: Select Interpreter`**.
+3. Choose **`Python 3.12.x`** in the list.
+
 ### 🚀 How to Run
 1. **Clone the repository:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Setup Virtual Environment:** `python -m venv venv` and activate it.
+2. **Configure the Virtual Environment:** `python -m venv venv` and activate it (`.\.venv\Scripts\Activate.ps1` on Windows or `source venv/bin/activate` on Linux/Mac).
 3. **Install dependencies:** `pip install -r requirements.txt`
 4. **Configure the `.env` file** in the project root with your credentials.
-5. **Run the orchestrator:** `python main.py`
-6. **Launch the dashboard:** `streamlit run app.py`
+5. **Execute the orchestrator:** `python main.py`
+6. **Start the dashboard:** `streamlit run app.py`
 
 ---
 
