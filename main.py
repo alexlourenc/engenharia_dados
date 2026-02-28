@@ -2,6 +2,26 @@ import sys
 import os
 import time
 from pathlib import Path
+import os
+
+def ensure_structure():
+    # Pastas de dados da Arquitetura Medallion
+    folders = ['data/bronze', 'data/silver', 'data/gold']
+    
+    for folder in folders:
+        if not os.path.exists(folder):
+            os.makedirs(folder, exist_ok=True)
+            # Cria um .gitkeep para garantir que a pasta vazia seja rastreada se necessário
+            with open(os.path.join(folder, '.gitkeep'), 'w') as f:
+                pass
+    print("✅ Estrutura de pastas verificada/criada.")
+
+if __name__ == "__main__":
+    ensure_structure()
+
+
+
+
 
 # Add the 'src' folder to the system path to enable module imports
 # Adiciona a pasta 'src' ao sistema para permitir as importações dos seus módulos
