@@ -1,6 +1,57 @@
 # 🚀 JIRA Data Engineering Pipeline – Medallion Architecture
 
-Este projeto implementa um pipeline de Engenharia de Dados robusto para processar dados do JIRA, utilizando a Arquitetura Medallion para transformar dados brutos em inteligência de negócio sobre SLA (Service Level Agreement).
+This project implements a robust Data Engineering pipeline to process JIRA data, utilizing the Medallion Architecture to transform raw data into business intelligence regarding SLA (Service Level Agreement).
+---
+
+
+## 🇺🇸 English Version
+
+### 📋 Objective
+This project automates the ingestion and processing of JIRA tickets to calculate resolution time in **business hours**, excluding weekends and national holidays.
+
+### 🏗️ Pipeline Architecture
+The project follows the **Medallion Architecture**:
+* **Bronze Layer**: Raw ingestion from Azure Blob Storage using Service Principal authentication.
+* **Silver Layer**: Data cleaning, normalization, and conversion to **Parquet** format for performance.
+* **Gold Layer**: Business rules application and SLA calculation based on priority, integrated with **BrasilAPI**.
+* **Data Quality**: Automated auditing of integrity, volume, and null validation.
+
+### 🖥️ Dashboard & Visualization (Streamlit)
+Interactive interface for performance management:
+- **Dynamic Filters**: Date Range, Issue Type, and Analyst.
+- **Trend Analysis**: Monthly SLA compliance tracking.
+- **Performance Ranking**: Automated analyst classification (Top Performer, Standard, Needs Support).
+
+### 🛠️ Technologies & Best Practices
+* **Python 3.x** and **Pandas** for data manipulation.
+* **Streamlit & Plotly** for visualization and interactive dashboards.
+* **PyArrow**: Stable Parquet write engine.
+* **Security**: Use of environment variables (`.env`) and sensitive data protection via `.gitignore`.
+
+### 📈 Execution Evidence & Quality
+The pipeline features a central orchestrator that validates each stage. In test runs:
+- **Data Funnel**: 1000 raw records ➡️ 990 valid records ➡️ 804 finalized tickets.
+- **Auditing**: 100% validation of priority rules and chronological integrity.
+
+## 🛠️ Environment Setup Guide
+
+Follow these steps to automatically configure the environment via CMD/Terminal using **Python 3.12**:
+
+---
+
+### 🚀 How to Run
+
+1. **Open CMD (Command Prompt):** 
+Use the cd command in CMD:
+`cd "C:\Users\Alex Lourenço\Desktop\project-root"` **<----- UPDATE TO YOUR ACTUAL PATH** 
+2. **Run Automatic Setup:**`python init_project.py`
+ Run the master script. It will create the venv folder, install dependencies from requirements.txt, and ask for your credentials to set up the .env file.
+
+3. **Execution Workflow** 
+Whenever you use the project, follow this order in the terminal:
+    **1. Activate Environment:** `venv\Scripts\activate`
+    **2. Run Pipeline:** `python main.py`
+    **3.Open Dashboard:** `streamlit run app.py`
 
 ---
 
@@ -38,92 +89,46 @@ O pipeline conta com um orquestrador central que valida cada etapa. Em execuçõ
 
 ## 🛠️ Guia de Configuração do Ambiente (Setup)
 
-Siga estas etapas na ordem exata para garantir a consistência do ambiente utilizando o **Python 3.12**.
+Siga estas etapas para configurar o ambiente automaticamente via CMD/Terminal  utilizando o **Python 3.12**.:
 
 ---
-
-### 1. Selecionar o Interpretador (VS Code)
-Antes de criar o ambiente, force o editor a usar a versão correta para evitar conflitos de cache:
-
-1. Pressione `Ctrl + Shift + P` (ou `Cmd + Shift + P` no Mac).
-2. Digite **`Python: Select Interpreter`**.
-3. Escolha **`Python 3.12.x`** na lista.
 
 ### 🚀 Como Executar
-1. **Clone o repositório:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Configure o Ambiente Virtual:** `py -3.12 -m venv venv` e ative-o (`.\venv\Scripts\Activate.ps1` no Windows ou `source venv/bin/activate` no Linux/Mac).
-3. **Instale as dependências:** `pip install -r requirements.txt`
-4. **Configure o arquivo `.env`** na raiz do projeto com suas credenciais.
-5. **Execute o orquestrador:** `python main.py`
-6. **Inicie o dashboard:** `streamlit run app.py`
----
 
-## 🇺🇸 English Version
+1. **Abra o CMD (Prompt de Comando):** 
+Use o comando cd no CMD (Prompt de Comando): 
+`cd "C:\Users\Alex Lourenço\Desktop\project-root"` **<----- ATUALIZE O SEU ENDEREÇO** 
+2. **Executar o Setup Automático**`python init_project.py`
+ Rode o script mestre. Ele criará a pasta venv, instalará as dependências do requirements.txt e solicitará suas credenciais para o arquivo .env:
 
-### 📋 Objective
-This project automates the ingestion and processing of JIRA tickets to calculate resolution time in **business hours**, excluding weekends and national holidays.
-
-### 🏗️ Pipeline Architecture
-The project follows the **Medallion Architecture**:
-* **Bronze Layer**: Raw ingestion from Azure Blob Storage using Service Principal authentication.
-* **Silver Layer**: Data cleaning, normalization, and conversion to **Parquet** format for performance.
-* **Gold Layer**: Business rules application and SLA calculation based on priority, integrated with **BrasilAPI**.
-* **Data Quality**: Automated auditing of integrity, volume, and null validation.
-
-### 🖥️ Dashboard & Visualization (Streamlit)
-Interactive interface for performance management:
-- **Dynamic Filters**: Date Range, Issue Type, and Analyst.
-- **Trend Analysis**: Monthly SLA compliance tracking.
-- **Performance Ranking**: Automated analyst classification (Top Performer, Standard, Needs Support).
-
-### 🛠️ Technologies & Best Practices
-* **Python 3.x** and **Pandas** for data manipulation.
-* **Streamlit & Plotly** for visualization and interactive dashboards.
-* **PyArrow**: Stable Parquet write engine.
-* **Security**: Use of environment variables (`.env`) and sensitive data protection via `.gitignore`.
-
-### 📈 Execution Evidence & Quality
-The pipeline features a central orchestrator that validates each stage. In test runs:
-- **Data Funnel**: 1000 raw records ➡️ 990 valid records ➡️ 804 finalized tickets.
-- **Auditing**: 100% validation of priority rules and chronological integrity.
-
-## 🛠️ Environment Setup Guide
-
-Follow these steps in the exact order to ensure environment consistency using **Python 3.12**.
-
----
-
-### 1. Select the Interpreter (VS Code)
-Before creating the environment, force the editor to use the correct version to avoid cache conflicts:
-
-1. Press `Ctrl + Shift + P` (or `Cmd + Shift + P` on Mac).
-2. Type **`Python: Select Interpreter`**.
-3. Choose **`Python 3.12.x`** in the list.
-
-### 🚀 How to Run
-1. **Clone the repository:** `git clone https://github.com/alexlourenc/engenharia_dados.git`
-2. **Configure the Virtual Environment:** `py -3.12 -m venv venv` and activate it (`.\venv\Scripts\Activate.ps1` on Windows or `source venv/bin/activate` on Linux/Mac).
-3. **Install dependencies:** `pip install -r requirements.txt`
-4. **Configure the `.env` file** in the project root with your credentials.
-5. **Execute the orchestrator:** `python main.py`
-6. **Start the dashboard:** `streamlit run app.py`
-
+3. **Fluxo de Execução** 
+Sempre que for utilizar o projeto, siga esta ordem no terminal:
+    **1. Ativar Ambiente:** `venv\Scripts\activate`
+    **2. Rodar Pipeline:** `python main.py`
+    **3. Abrir Dashboard:** `streamlit run app.py`
 ---
 
 ## 📂 Estrutura de Pastas / Project Structure
 ```text
 PROJECT-ROOT/
-├── data/               # Armazenamento Local / Local Storage (Ignorado no Git)
-├── src/                # Código-fonte principal / Source Code
-│   ├── bronze/         # Ingestão (JSON Raw) / Ingestion
-│   ├── silver/         # Limpeza e Parquet / Cleaning & Parquet
-│   ├── gold/           # Regras de Negócio / Business Rules
-│   ├── sla_calculation.py   # Motor de Cálculo / Calculation Engine
-│   └── validate_pipeline.py # Auditoria de Dados / Data Auditing
-├── .env                # Credenciais e Variáveis de ambiente (Sensitive data)
-├── .gitignore          # Proteção de arquivos sensíveis
-├── .python-version     # Versão fixa do Python (3.12)
-├── app.py              # Interface do Dashboard (Streamlit)
-├── main.py             # Orquestrador Central / Main Orchestrator
-├── README.md           # Documentação do projeto
-└── requirements.txt    # Dependências do projeto
+├── .pycache/               # Arquivos de cache do Python (Ignorado)
+├── data/                   # Armazenamento Local / Local Storage (Ignorado)
+├── src/                    # Código-fonte principal / Source Code
+│   ├── __pycache__/        # Cache interno da src
+│   ├── bronze/             # Camada de Ingestão (JSON Raw)
+│   │   ├── __pycache__/
+│   │   └── ingest_bronze.py
+│   ├── silver/             # Camada de Limpeza e Transformação (Parquet)
+│   ├── gold/               # Camada de Regras de Negócio / Analytics
+│   ├── sla_calculation.py  # Motor de Cálculo de SLA
+│   └── validate_pipeline.py # Auditoria e Validação de Dados
+├── venv/                   # Ambiente Virtual Python (Local)
+├── .env                    # Variáveis de ambiente e Credenciais
+├── .gitignore              # Configuração de arquivos ignorados pelo Git
+├── .python-version         # Definição da versão do Python (Ex: 3.12)
+├── app.py                  # Interface do Dashboard (Streamlit)
+├── init_project.py         # Script de inicialização/setup do projeto
+├── main.py                 # Orquestrador Central / Ponto de Entrada
+├── README.md               # Documentação principal (Markdown)
+├── README.pdf              # Exportação da documentação em PDF
+└── requirements.txt        # Lista de dependências do projeto
