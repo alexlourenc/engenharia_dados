@@ -12,6 +12,8 @@ data/bronze/*
 data/silver/*
 data/gold/*
 
+!data/data_dictionary.json
+
 # Do not ignore .gitkeep files to preserve directories
 # Não ignora os arquivos .gitkeep para preservar os diretórios
 !data/**/.gitkeep

@@ -1,0 +1,92 @@
+{
+    "execution_date": "2026-03-01 09:01:32",
+    "total_time": 373.59,
+    "workflow": {
+        "bronze": {
+            "step": 1,
+            "phase": "Bronze",
+            "tasks": [
+                {
+                    "name": "Ingestion",
+                    "status": "completed",
+                    "records": 1000,
+                    "file": "C:\\Users\\Alex Lourenço\\Desktop\\project-root\\data\\bronze\\jira_issues_raw.json"
+                }
+            ]
+        },
+        "silver": {
+            "step": 2,
+            "phase": "Silver",
+            "tasks": [
+                {
+                    "name": "Data load",
+                    "status": "completed",
+                    "records": 1000
+                },
+                {
+                    "name": "Cleaning",
+                    "status": "completed",
+                    "invalid_records_removed": 10
+                },
+                {
+                    "name": "file",
+                    "status": "completed",
+                    "file": "C:\\Users\\Alex Lourenço\\Desktop\\project-root\\data\\silver\\jira_issues_clean.parquet"
+                }
+            ]
+        },
+        "gold": {
+            "step": 3,
+            "phase": "Gold",
+            "tasks": [
+                {
+                    "name": "SLA Calculation",
+                    "status": "completed",
+                    "outputs": [
+                        "C:\\Users\\Alex Lourenço\\Desktop\\project-root\\data\\gold\\final_sla_report.parquet",
+                        "report_analista.csv",
+                        "report_tipo_chamado.csv"
+                    ]
+                }
+            ]
+        },
+        "quality": {
+            "step": 4,
+            "phase": "Quality",
+            "tasks": [
+                {
+                    "name": "Null Check",
+                    "status": "completed",
+                    "result": "No nulls found"
+                },
+                {
+                    "name": "Chronological Validation",
+                    "status": "completed",
+                    "result": "All records validated"
+                }
+            ]
+        }
+    },
+    "steps": [
+        {
+            "STEP": "BRONZE",
+            "DESCRIPTION": "Ingestion completed.",
+            "STATUS": "✔️"
+        },
+        {
+            "STEP": "SILVER",
+            "DESCRIPTION": "Cleaning & Normalization.",
+            "STATUS": "✔️"
+        },
+        {
+            "STEP": "GOLD",
+            "DESCRIPTION": "SLA Rules Applied.",
+            "STATUS": "✔️"
+        },
+        {
+            "STEP": "QUALITY",
+            "DESCRIPTION": "Integrity audit finished.",
+            "STATUS": "✔️"
+        }
+    ]
+}

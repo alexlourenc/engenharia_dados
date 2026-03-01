@@ -1,0 +1,81 @@
+{
+  "data_dictionary": [
+    {
+      "field": "id",
+      "type": "Integer",
+      "description_en": "Unique identifier of the record.",
+      "description_pt": "Identificador único do registro.",
+      "rules": "Primary key, cannot be null."
+    },
+    {
+      "field": "issue_type",
+      "type": "Text",
+      "description_en": "Classification of the issue/ticket.",
+      "description_pt": "Classificação do chamado.",
+      "rules": "Controlled values (fixed domain)."
+    },
+    {
+      "field": "status",
+      "type": "Text",
+      "description_en": "Current state of the issue/ticket.",
+      "description_pt": "Estado atual do chamado.",
+      "rules": "Controlled values."
+    },
+    {
+      "field": "priority",
+      "type": "Text",
+      "description_en": "Priority level of the issue/ticket.",
+      "description_pt": "Nível de prioridade do chamado.",
+      "rules": "Controlled values."
+    },
+    {
+      "field": "analista",
+      "type": "Text",
+      "description_en": "Name of the responsible analyst.",
+      "description_pt": "Nome do analista responsável.",
+      "rules": "May be null if not assigned."
+    },
+    {
+      "field": "created_at",
+      "type": "DateTime",
+      "description_en": "Date and time when the issue/ticket was created.",
+      "description_pt": "Data e hora de criação do chamado.",
+      "rules": "Must be chronologically valid."
+    },
+    {
+      "field": "resolved_at",
+      "type": "DateTime",
+      "description_en": "Date and time when the issue/ticket was resolved.",
+      "description_pt": "Data e hora de fechamento do chamado.",
+      "rules": "Must be greater than created_at."
+    },
+    {
+      "field": "hours_resolution",
+      "type": "Decimal",
+      "description_en": "Total resolution time in hours.",
+      "description_pt": "Tempo total de resolução em horas.",
+      "rules": "Automatically calculated."
+    },
+    {
+      "field": "sla_expected",
+      "type": "Decimal",
+      "description_en": "SLA threshold in hours expected for resolution.",
+      "description_pt": "Limite de SLA em horas esperado para resolução.",
+      "rules": "Defined by business rules."
+    },
+    {
+      "field": "is_sla_met",
+      "type": "Boolean",
+      "description_en": "Indicates whether the SLA was met.",
+      "description_pt": "Indica se o SLA foi cumprido.",
+      "rules": "Calculated in Gold layer."
+    },
+    {
+      "field": "month_year",
+      "type": "Text",
+      "description_en": "Year and month reference for reporting/aggregation.",
+      "description_pt": "Referência de ano e mês para relatórios/agrupamentos.",
+      "rules": "Derived field, used for reporting."
+    }
+  ]
+}

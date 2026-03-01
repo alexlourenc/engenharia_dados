@@ -1,110 +1,186 @@
 import sys
 import os
 import time
+import json
+import pandas as pd
 from pathlib import Path
 
+def clear_terminal():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
 def ensure_structure():
-    """Cria a estrutura de pastas da Arquitetura Medallion se não existir."""
     folders = ['data/bronze', 'data/silver', 'data/gold']
     for folder in folders:
-        if not os.path.exists(folder):
-            os.makedirs(folder, exist_ok=True)
-            # Cria um .gitkeep para garantir que a pasta seja rastreada pelo Git
-            with open(os.path.join(folder, '.gitkeep'), 'w') as f:
-                pass
-    print("✅ Estrutura de pastas verificada/criada.")
+        os.makedirs(folder, exist_ok=True)
+        Path(os.path.join(folder, '.gitkeep')).touch()
 
-# Garante a estrutura antes de mais nada
 ensure_structure()
-
-# Adiciona a pasta 'src' ao sistema para permitir as importações dos módulos
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-# Importação dos módulos das camadas
 try:
     from bronze.ingest_bronze import ingest_bronze
     from silver.transform_silver import run_silver_transformation
     from gold.build_gold import build_gold
     from validate_pipeline import validate_data_quality
 except ImportError as e:
-    print(f"❌ Error importing modules / Erro ao importar módulos: {e}")
-    print("Ensure the 'src/' folder structure is correct. / Verifique a estrutura de pastas.")
+    print(f"❌ Error importing modules: {e}")
     sys.exit(1)
 
-def run_pipeline():
-    """
-    Orquestra o pipeline completo de engenharia de dados, da Bronze à Gold.
-    """
-    start_time = time.time()
+def get_actual_counts():
+    counts = {"bronze": 0, "silver": 0, "gold": 0}
+    p_bronze = Path('data/bronze/jira_issues_raw.json')
+    p_silver = Path('data/silver/jira_issues_clean.parquet')
     
+    if p_bronze.exists():
+        try:
+            with open(p_bronze, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    counts["bronze"] = len(data)
+                elif isinstance(data, dict):
+                    issues = data.get('issues') or data.get('values') or data.get('data')
+                    counts["bronze"] = len(issues) if isinstance(issues, list) else 1
+        except: pass
+
+    if p_silver.exists():
+        try:
+            counts["silver"] = len(pd.read_parquet(p_silver))
+        except: pass
+            
+    return counts
+
+def save_pipeline_stats(results, total_time):
+    """Gera o JSON de auditoria no formato exato solicitado."""
+    counts = get_actual_counts() 
+    
+    path_b = str(Path("data/bronze/jira_issues_raw.json").absolute())
+    path_s = str(Path("data/silver/jira_issues_clean.parquet").absolute())
+    path_g = str(Path("data/gold/final_sla_report.parquet").absolute())
+
+    status_bronze = "completed" if results[0][2] == "✔️" else "failed"
+    status_silver = "completed" if results[1][2] == "✔️" else "failed"
+    status_gold   = "completed" if results[2][2] == "✔️" else "failed"
+    status_quality = "completed" if len(results) > 3 and results[3][2] == "✔️" else "failed"
+
+    # Cálculo conforme sua lógica de records vs invalid
+    invalid_qty = counts["bronze"] - counts["silver"]
+
+    stats = {
+        "execution_date": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "total_time": total_time,
+        "workflow": {
+            "bronze": {
+                "step": 1,
+                "phase": "Bronze",
+                "tasks": [
+                    {
+                        "name": "Ingestion",
+                        "status": status_bronze,
+                        "records": counts["bronze"],
+                        "file": path_b
+                    }
+                ]
+            },
+            "silver": {
+                "step": 2,
+                "phase": "Silver",
+                "tasks": [
+                    {"name": "Data load", "status": status_silver, "records": counts["bronze"]},
+                    {"name": "Cleaning", "status": status_silver, "invalid_records_removed": invalid_qty},
+                    {"name": "file", "status": status_silver, "file": path_s}
+                ]
+            },
+            "gold": {
+                "step": 3,
+                "phase": "Gold",
+                "tasks": [
+                    {
+                        "name": "SLA Calculation",
+                        "status": status_gold,
+                        "outputs": [
+                            path_g,
+                            "report_analista.csv",
+                            "report_tipo_chamado.csv"
+                        ]
+                    }
+                ]
+            },
+            "quality": {
+                "step": 4,
+                "phase": "Quality",
+                "tasks": [
+                    {
+                        "name": "Null Check",
+                        "status": status_quality,
+                        "result": "No nulls found" if status_quality == "completed" else "Failed"
+                    },
+                    {
+                        "name": "Chronological Validation",
+                        "status": status_quality,
+                        "result": "All records validated" if status_quality == "completed" else "Validation Error"
+                    }
+                ]
+            }
+        },
+        "steps": [{"STEP": r[0], "DESCRIPTION": r[1], "STATUS": r[2]} for r in results]
+    }
+    
+    with open('data/pipeline_stats.json', 'w', encoding='utf-8') as f:
+        json.dump(stats, f, indent=4, ensure_ascii=False)
+
+def print_summary(results, total_time):
+    clear_terminal()
     print("="*60)
-    print("🚀 JIRA DATA ENGINEERING PIPELINE / PIPELINE DE ENGENHARIA DE DADOS")
+    print("🚀 JIRA DATA ENGINEERING PIPELINE")
+    print("="*60)
+    header = f"{'STEP':<10} | {'DESCRIPTION':<35} | {'STATUS'}"
+    print(header)
+    print("-" * len(header))
+    for step, desc, status in results:
+        print(f"{step:<10} | {desc[:35]:<35} | {status}")
+    print("-" * len(header))
+    print(f"✅ COMPLETED IN {total_time}s | Dashboard: streamlit run app.py\n")
+
+def run_pipeline():
+    results = []
+    clear_terminal()
+    print("="*60)
+    print("🔍 RUNNING AUTOMATED PIPELINE")
     print("="*60)
 
-    # --- FASE 1: BRONZE (Ingestão) ---
-    print("\n[STEP 1/4] BRONZE PHASE: Azure Blob Storage Ingestion...")
+    start_time = time.time()
+
+    # Step 1: BRONZE
     if ingest_bronze():
-        print("✔️ Raw data persisted successfully. / Dados brutos persistidos.")
+        results.append(["BRONZE", "Ingestion completed.", "✔️"])
     else:
-        print("❌ Critical failure during ingestion. Aborting. / Falha crítica. Interrompendo.")
+        results.append(["BRONZE", "Ingestion failed.", "❌"])
         return
 
-    # --- FASE 2: SILVER (Transformação) ---
-    print("\n[STEP 2/4] SILVER PHASE: Cleaning, Normalization, and Typing...")
+    # Step 2: SILVER
     try:
         run_silver_transformation()
-        print("✔️ Normalized data saved in Parquet (Silver). / Dados salvos em Parquet.")
+        results.append(["SILVER", "Cleaning & Normalization.", "✔️"])
     except Exception as e:
-        print(f"❌ Error in Silver Phase / Erro na Fase Silver: {e}")
-        return
+        results.append(["SILVER", f"Error: {e}", "❌"])
 
-    # --- FASE 3: GOLD (Regras de Negócio/SLA) ---
-    print("\n[STEP 3/4] GOLD PHASE: SLA Calculation (Business Days & Holidays)...")
+    # Step 3: GOLD
     try:
         build_gold()
-        print("✔️ Metrics and reports generated (Gold). / Métricas e relatórios gerados.")
+        results.append(["GOLD", "SLA Rules Applied.", "✔️"])
     except Exception as e:
-        print(f"❌ Error in Gold Phase / Erro na Fase Gold: {e}")
-        return
+        results.append(["GOLD", f"Error: {e}", "❌"])
 
-    # --- FASE 4: VALIDAÇÃO (Data Quality) ---
-    print("\n[STEP 4/4] QUALITY: Integrity and Rules Audit...")
+    # Step 4: QUALITY
     try:
         validate_data_quality()
-        print("✔️ Quality audit finished. / Auditoria de qualidade finalizada.")
+        results.append(["QUALITY", "Integrity audit finished.", "✔️"])
     except Exception as e:
-        print(f"⚠️ Audit Alert / Alerta na Auditoria: {e}")
+         results.append(["QUALITY", f"Audit Alert: {e}", "⚠️"])
     
-    end_time = time.time()
-    total_time = round(end_time - start_time, 2)
-    
-    # --- FINALIZAÇÃO E CHAMADA PARA O STREAMLIT ---
-    print("\n" + "="*60)
-    print(f"✅ EXECUTION COMPLETED SUCCESSFULLY IN {total_time}s!")
-    print("="*60)
-    print(f"📍 Final Reports: data/gold/")
-    print(f"📍 Pipeline Status: Healthy / Saudável")
-    print("="*60)
-    
-    # Instrução para o Dashboard
-    print("\n📊 VISUALIZAÇÃO DOS DADOS:")
-    print("O pipeline foi concluído. Para visualizar o Dashboard interativo, execute:")
-    print("-" * 40)
-    print("streamlit run app.py")
-    print("-" * 40 + "\n")
-
-    # No final da função run_pipeline() do seu main.py
-    print("\n📊 VISUALIZAÇÃO DOS DADOS:")
-    print("O pipeline foi concluído. Para abrir o Dashboard, execute:")
-    print("-" * 50)
-    print("streamlit run app.py")
-    print("-" * 50)
-    print("💡 DICA: Para encerrar o Dashboard e liberar o terminal,")
-    print("   pressione as teclas [Ctrl] + [C] simultaneamente.")
-    print("-" * 50 + "\n")
-
-
-
+    total_time = round(time.time() - start_time, 2)
+    save_pipeline_stats(results, total_time)
+    print_summary(results, total_time)
 
 if __name__ == "__main__":
     run_pipeline()
