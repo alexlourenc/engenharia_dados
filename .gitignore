@@ -1,28 +1,30 @@
-# --- Python Environment / Ambiente Python ---
+# --- Python Environment ---
 __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+venv/
+env/
 .env
 
-# --- Data Layer (Local Storage) / Camada de Dados (Armazenamento Local) ---
-# We ignore the data but keep the folder structure using .gitkeep
-# Ignoramos os dados mas mantemos a estrutura de pastas usando .gitkeep
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- Data Layer (Local Storage) ---
 data/bronze/*
 data/silver/*
 data/gold/*
-
 !data/data_dictionary.json
-
-# Do not ignore .gitkeep files to preserve directories
-# Não ignora os arquivos .gitkeep para preservar os diretórios
 !data/**/.gitkeep
 
-# --- Logs and Local Reports / Logs e Relatórios Locais ---
+# --- Logs and Local Reports ---
 *.log
+# Cuidado: Isso ignora TODOS os dados. 
+# Se precisar de um CSV específico, use: !data/config.csv
 *.csv
 *.parquet
 
-# --- OS generated files / Arquivos gerados pelo Sistema Operacional ---
+# --- OS generated files ---
 .DS_Store
 Thumbs.db
