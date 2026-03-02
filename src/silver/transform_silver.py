@@ -1,3 +1,9 @@
+"""
+PROJECT: JIRA SLA Management Console - Silver Layer
+AUTHOR: Alex Lourenço (https://github.com/alexlourenc/)
+DESCRIPTION: Data cleaning, normalization, and Parquet conversion. Preserves 'Open' tickets as per requirement.
+"""
+
 import pandas as pd
 import json
 import logging
@@ -17,8 +23,7 @@ def run_silver_transformation():
     """
     logger.info("--- 🥈 Starting Silver Transformation / Iniciando Transformação Silver ---")
     
-    # Path Setup
-    # Configuração de Caminhos
+    # Path Setup / Configuração de Caminhos
     base_dir = Path(__file__).resolve().parents[2]
     load_dotenv(dotenv_path=base_dir / ".env")
     
@@ -26,8 +31,7 @@ def run_silver_transformation():
     input_path = base_dir / "data" / "bronze" / input_filename
     output_path = base_dir / "data" / "silver" / "jira_issues_clean.parquet"
 
-    # Data Loading
-    # Carregamento de Dados
+    # Data Loading / Carregamento de Dados
     try:
         if not input_path.exists():
             logger.error(f"❌ Source file not found / Arquivo não encontrado: {input_path}")
@@ -58,25 +62,23 @@ def run_silver_transformation():
             return val[0].get(field)
         return None
 
-    # Transformation Logic
-    # Lógica de Transformação
+    # Transformation Logic / Lógica de Transformação
     df['analista'] = df['assignee'].apply(extract_assignee)
     df['created_at'] = df['timestamps'].apply(lambda x: extract_ts(x, 'created_at'))
     df['resolved_at'] = df['timestamps'].apply(lambda x: extract_ts(x, 'resolved_at'))
 
-    # Type Conversion
-    # Conversão de Tipos
+    # Type Conversion / Conversão de Tipos
     df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
     df['resolved_at'] = pd.to_datetime(df['resolved_at'], errors='coerce')
 
-    # Data Quality: Removing records without creation date
-    # Qualidade de Dados: Removendo registros sem data de criação
+    # Data Quality: Removing ONLY records without creation date (Technical Junk)
+    # Qualidade de Dados: Removendo APENAS registros sem data de criação (Lixo técnico)
+    # Note: 'Open' tickets are kept because they HAVE a created_at date.
     before_count = len(df)
     df = df.dropna(subset=['created_at']).copy()
-    logger.info(f"🧹 Cleaning: {before_count - len(df)} invalid records removed.")
+    logger.info(f"🧹 Cleaning: {before_count - len(df)} invalid records removed. Status 'Open' preserved.")
 
-    # Column Selection and Final Typing
-    # Seleção de Colunas e Tipagem Final
+    # Column Selection and Final Typing / Seleção de Colunas e Tipagem Final
     cols_to_keep = ['id', 'issue_type', 'status', 'priority', 'analista', 'created_at', 'resolved_at']
     df_silver = df[cols_to_keep].copy()
 
@@ -86,8 +88,7 @@ def run_silver_transformation():
     for col in text_cols:
         df_silver[col] = df_silver[col].astype(str)
 
-    # Saving to Parquet (Silver Layer)
-    # Salvando em Parquet (Camada Silver)
+    # Saving to Parquet (Silver Layer) / Salvando em Parquet (Camada Silver)
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         df_silver.to_parquet(output_path, index=False, engine='pyarrow')

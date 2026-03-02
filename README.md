@@ -13,8 +13,19 @@ Automates JIRA ticket ingestion and processing to calculate resolution time in *
 The project follows the **Medallion Architecture**, ensuring data lineage and governance:
 * **Bronze Layer**: Raw ingestion of JSON files, preserving source data immutability.
 * **Silver Layer**: Data cleaning, schema normalization, and conversion to **Parquet** format for optimized I/O performance.
-* **Gold Layer**: Business rules application and vectorized SLA calculation based on priority, integrated with official national holiday calendars.
+* **Gold Layer**: Business rules application and vectorized SLA calculation based on priority.
 * **Data Quality (Step 4)**: Automated auditing system for integrity, volume consistency, and null validation via `data_dictionary.json`.
+
+
+
+### 🧠 Core Engine Logic
+The analytical heart of the solution resides in `sla_calculation.py`, designed for precision and scalability:
+
+* **`get_expected_sla(priority)`**: Maps ticket priority to business requirements (High: 24h, Medium: 72h, Low: 120h) using strict conditional mapping.
+* **`calculate_business_hours(start, end, holidays)`**: The "brain" of the engine. It uses vectorized `numpy.busday_count` to calculate the time delta, automatically subtracting weekends and national holidays retrieved from **BrasilAPI**.
+* **`check_compliance(actual, limit)`**: Executes the final validation, returning a Boolean flag ($True$ / $False$) used for executive reporting and alerting.
+
+
 
 ### 🖥️ Executive Dashboard (Streamlit)
 Interactive management console for performance oversight:
@@ -43,8 +54,15 @@ O objetivo deste projeto é automatizar a ingestão e o processamento ponta a po
 O projeto segue a **Arquitetura Medallion**, garantindo linhagem de dados e governança:
 * **Camada Bronze**: Ingestão bruta de arquivos JSON, preservando a imutabilidade dos dados de origem.
 * **Camada Silver**: Limpeza, normalização de schema e conversão para o formato **Parquet** visando performance.
-* **Camada Gold**: Aplicação de regras de negócio e cálculo de SLA vetorizado baseado na prioridade, integrado ao calendário oficial de feriados.
+* **Camada Gold**: Aplicação de regras de negócio e cálculo de SLA vetorizado.
 * **Qualidade (Step 4)**: Sistema de auditoria automática de integridade, volumetria e validação de nulos via `data_dictionary.json`.
+
+### 🧠 Lógica do Motor de SLA
+O núcleo analítico da solução reside em `sla_calculation.py`, projetado para precisão e escalabilidade:
+
+* **`get_expected_sla(priority)`**: Traduz a prioridade do chamado em requisitos de negócio (24h, 72h, 120h).
+* **`calculate_business_hours(start, end, holidays)`**: O "cérebro" do projeto. Utiliza `numpy.busday_count` para calcular o delta de tempo, subtraindo finais de semana e feriados nacionais obtidos da **BrasilAPI**.
+* **`check_compliance(actual, limit)`**: Executa a validação final, retornando o indicador booleano ($True$ / $False$) que alimenta os relatórios e alertas.
 
 ### 🖥️ Dashboard e Visualização (Streamlit)
 Console interativo de gestão para tomada de decisão estratégica:
@@ -53,7 +71,7 @@ Console interativo de gestão para tomada de decisão estratégica:
 - **Visibilidade Transversal**: Coluna de Status integrada em todos os níveis de auditoria e detalhamento.
 
 ### 🛠️ Tecnologias e Boas Práticas
-* **Python 3.12** e **Pandas** para manipulação de dados vetorizada.
+* **Python 3.12** e **Pandas**: Manipulação de dados vetorizada.
 * **Numpy e LRU Cache**: Otimização de cálculos temporais e gestão de chamadas de API.
 * **Streamlit & Plotly**: Visualização profissional e dashboards interativos.
 * **Segurança**: Uso de variáveis de ambiente (`.env`) e proteção de dados sensíveis.
