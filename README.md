@@ -41,7 +41,7 @@ Interactive management console for performance oversight:
 
 ### 📈 Execution Evidence & Quality
 - **Data Funnel**: 1000 raw records ➡️ 990 valid ➡️ 804 finalized tickets.
-- **Performance**: Overall system compliance currently at **73.1%**.
+- **Performance**: Overall system compliance currently at **92.0%**.
 
 ---
 
@@ -78,7 +78,7 @@ Console interativo de gestão para tomada de decisão estratégica:
 
 ### 📈 Evidências de Execução e Qualidade
 - **Funil de Dados**: Ingestão de 1000 registros ➡️ 990 válidos ➡️ 804 chamados finalizados.
-- **Conformidade**: A taxa de conformidade atual do sistema é de **73.1%**.
+- **Conformidade**: A taxa de conformidade atual do sistema é de **92.0%**.
 
 ---
 
