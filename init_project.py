@@ -25,7 +25,7 @@ def run_command(command):
         subprocess.run(command, check=True, shell=True)
         return True
     except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Command failed / Comando falhou: {e}")
+        logger.error(f"Command failed / Comando falhou: {e}")
         return False
 
 def get_venv_info():
@@ -69,10 +69,10 @@ def configure_dotenv():
 
     missing = [k for k in required_keys if k not in existing_values]
     if not missing:
-        logger.info("✅ .env file credentials are complete / Credenciais no .env estão completas.")
+        logger.info(".env file credentials are complete / Credenciais no .env estão completas.")
         return
 
-    logger.info(f"🛠️ CONFIGURING CREDENTIALS / CONFIGURAÇÃO DE CREDENCIAIS ({len(missing)} pending)")
+    logger.info(f"CONFIGURING CREDENTIALS / CONFIGURAÇÃO DE CREDENCIAIS ({len(missing)} pending)")
     for key in required_keys:
         if key in existing_values:
             continue
@@ -81,60 +81,63 @@ def configure_dotenv():
             if val:
                 existing_values[key] = val
                 break
-            print("❌ Mandatory field / Campo obrigatório.")
+            print("Mandatory field / Campo obrigatório.")
 
     # Persisting values back to .env
     # Persistindo os valores de volta para o .env
     with open(env_file, "w", encoding="utf-8") as f:
         for key in required_keys:
             f.write(f"{key}={existing_values[key]}\n")
-    logger.info("✅ .env file updated / Arquivo .env atualizado.")
+    logger.info(".env file updated / Arquivo .env atualizado.")
 
 def setup_environment():
     """
     Main orchestration function for the project environment setup.
     Função principal de orquestração para o setup do ambiente do projeto.
     """
-    logger.info("🚀 STARTING PROJECT SETUP / INICIANDO SETUP DO PROJETO")
+    logger.info("STARTING PROJECT SETUP / INICIANDO SETUP DO PROJETO")
     logger.info("="*50)
     
     venv_name, pip_path, os_system = get_venv_info()
 
-    # 1. VENV Creation (if it doesn't exist)
-    # 1. Criação da VENV (se não existir)
+    # VENV Creation (if it doesn't exist)
+    # Criação da VENV (se não existir)
     if not venv_name:
         venv_name = "venv"
-        logger.info(f"📦 Creating virtual environment / Criando ambiente virtual: '{venv_name}'")
+        logger.info(f"Creating virtual environment / Criando ambiente virtual: '{venv_name}'")
         if not run_command(f'"{sys.executable}" -m venv {venv_name}'):
-            logger.error("❌ Failed to create venv / Falha ao criar venv.")
+            logger.error("Failed to create venv / Falha ao criar venv.")
             return
         
         # Recalculate pip path after creation
         # Recalcular o caminho do pip após a criação
-        pip_path = Path(venv_name) / ("Scripts/pip.exe" if os_system == "Windows" else "bin/pip")
+        if os_system == "Windows":
+            pip_path = Path(venv_name) / "Scripts" / "pip.exe"
+        else:
+            pip_path = Path(venv_name) / "bin" / "pip"
     else:
-        logger.info(f"✅ Venv detected / Venv detectada: '{venv_name}'")
+        logger.info(f"Venv detected / Venv detectada: '{venv_name}'")
 
-    # 2. Dependency Installation
-    # 2. Instalação de dependências
+    # Dependency Installation
+    # Instalação de dependências
     requirements_file = Path("requirements.txt")
     if requirements_file.exists():
-        logger.info("📥 Installing dependencies / Instalando dependências...")
+        logger.info("Installing dependencies / Instalando dependências...")
         # Upgrading pip first for stability
         # Atualizando o pip primeiro por estabilidade
         run_command(f'"{pip_path}" install --upgrade pip')
         run_command(f'"{pip_path}" install -r {requirements_file}')
     else:
-        logger.warning("⚠️ requirements.txt not found / não encontrado. Skipping installation.")
+        logger.warning("requirements.txt not found / não encontrado. Skipping installation.")
 
-    # 3. Environment variables configuration
-    # 3. Configuração de variáveis de ambiente
+    # Environment variables configuration
+    # Configuração de variáveis de ambiente
     configure_dotenv()
 
-    # 4. Finalization
-    # 4. Finalização
+    # Finalization
+    # Finalização
     logger.info("="*50)
-    logger.info("✨ SETUP COMPLETE / TUDO PRONTO!")
+    logger.info("SETUP COMPLETE / TUDO PRONTO!")
     
     activate_cmd = f".\\{venv_name}\\Scripts\\activate" if os_system == "Windows" else f"source {venv_name}/bin/activate"
     logger.info(f"To activate use / Para ativar use: {activate_cmd}")

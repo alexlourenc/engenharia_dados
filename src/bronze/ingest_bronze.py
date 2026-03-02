@@ -59,11 +59,12 @@ def ingest_bronze():
 
         logger.info(f"Starting blob download: {os.getenv('BLOB_NAME')}")
         
-        # Download the data and write it to the local bronze layer
-        # Baixa os dados e os escreve na camada bronze local
+        # Download the data in chunks and write it to the local bronze layer
+        # Baixa os dados em partes e os escreve na camada bronze local
         with open(target_path, "wb") as f:
-            data = blob_client.download_blob()
-            f.write(data.readall())
+            download_stream = blob_client.download_blob()
+            for chunk in download_stream.chunks():
+                f.write(chunk)
 
         logger.info(f"✅ Ingestion completed! File saved at: {target_path}")
         return True

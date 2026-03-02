@@ -1,4 +1,4 @@
-# --- Python Environment ---
+# --- Python Environment / Ambiente Python ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,33 +6,35 @@ __pycache__/
 venv/
 env/
 
-# --- SECURITY: NEVER UPLOAD THIS ---
+# --- Security: NEVER UPLOAD THIS / Segurança: NUNCA SUBA ISSO ---
 .env
 
-# --- IDEs ---
+# --- IDEs / Ambientes de Desenvolvimento ---
 .vscode/
 .idea/
 
-# --- Data Layer (Medallion Architecture) ---
-# Ignoramos tudo nas camadas iniciais (muito volume)
-data/bronze/*
-data/silver/*
-
-# Camada Gold: Ignoramos tudo, EXCETO o necessário para o App
-data/gold/*
-!data/gold/final_sla_report.parquet
-!data/gold/report_sla_analista.csv
-!data/gold/report_sla_tipo_chamado.csv
-
-# Outros metadados necessários
-!data/data_dictionary.json
-!data/**/.gitkeep
-
-# --- Logs and System Reports ---
+# --- Logs and System Reports / Logs e Relatórios de Sistema ---
 *.log
 .DS_Store
 Thumbs.db
 
-# --- General Ignore for Binary/Data Files ---
+# --- General Ignore for Binary and Data Files / Ignorar Arquivos Binários e de Dados Gerais ---
 *.csv
 *.parquet
+
+# --- Data Layer (Medallion Architecture) / Camada de Dados (Arquitetura Medalhão) ---
+# We ignore everything in the initial layers (high volume)
+# Ignoramos tudo nas camadas iniciais (muito volume)
+data/bronze/*
+data/silver/*
+data/gold/*
+
+# Gold Layer: We ignore everything EXCEPT what is needed for the App
+# Camada Gold: Ignoramos tudo, EXCETO o necessário para o App
+!data/gold/final_sla_report.parquet
+!data/gold/report_analista.csv
+!data/gold/report_tipo_chamado.csv
+
+# Other necessary metadata / Outros metadados necessários
+!data/data_dictionary.json
+!data/**/.gitkeep
