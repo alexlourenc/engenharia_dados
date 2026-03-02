@@ -1,81 +1,81 @@
 {
-  "data_dictionary": [
-    {
-      "field": "id",
-      "type": "Integer",
-      "description_en": "Unique identifier of the record.",
-      "description_pt": "Identificador único do registro.",
-      "rules": "Primary key, cannot be null."
-    },
-    {
-      "field": "issue_type",
-      "type": "Text",
-      "description_en": "Classification of the issue/ticket.",
-      "description_pt": "Classificação do chamado.",
-      "rules": "Controlled values (fixed domain)."
-    },
-    {
-      "field": "status",
-      "type": "Text",
-      "description_en": "Current state of the issue/ticket.",
-      "description_pt": "Estado atual do chamado.",
-      "rules": "Controlled values."
-    },
-    {
-      "field": "priority",
-      "type": "Text",
-      "description_en": "Priority level of the issue/ticket.",
-      "description_pt": "Nível de prioridade do chamado.",
-      "rules": "Controlled values."
-    },
-    {
-      "field": "analista",
-      "type": "Text",
-      "description_en": "Name of the responsible analyst.",
-      "description_pt": "Nome do analista responsável.",
-      "rules": "May be null if not assigned."
-    },
-    {
-      "field": "created_at",
-      "type": "DateTime",
-      "description_en": "Date and time when the issue/ticket was created.",
-      "description_pt": "Data e hora de criação do chamado.",
-      "rules": "Must be chronologically valid."
-    },
-    {
-      "field": "resolved_at",
-      "type": "DateTime",
-      "description_en": "Date and time when the issue/ticket was resolved.",
-      "description_pt": "Data e hora de fechamento do chamado.",
-      "rules": "Must be greater than created_at."
-    },
-    {
-      "field": "hours_resolution",
-      "type": "Decimal",
-      "description_en": "Total resolution time in hours.",
-      "description_pt": "Tempo total de resolução em horas.",
-      "rules": "Automatically calculated."
-    },
-    {
-      "field": "sla_expected",
-      "type": "Decimal",
-      "description_en": "SLA threshold in hours expected for resolution.",
-      "description_pt": "Limite de SLA em horas esperado para resolução.",
-      "rules": "Defined by business rules."
-    },
-    {
-      "field": "is_sla_met",
-      "type": "Boolean",
-      "description_en": "Indicates whether the SLA was met.",
-      "description_pt": "Indica se o SLA foi cumprido.",
-      "rules": "Calculated in Gold layer."
-    },
-    {
-      "field": "month_year",
-      "type": "Text",
-      "description_en": "Year and month reference for reporting/aggregation.",
-      "description_pt": "Referência de ano e mês para relatórios/agrupamentos.",
-      "rules": "Derived field, used for reporting."
-    }
-  ]
+    "fields_metadata": [
+        {
+            "field": "id",
+            "type": "string",
+            "sources": ["jira_issues_raw.json", "jira_issues_clean.parquet", "final_sla_report.parquet"],
+            "description_pt": "Identificador único do chamado. Chave primária para joins entre camadas.",
+            "description_en": "Unique issue identifier. Primary key for joins between layers."
+        },
+        {
+            "field": "status",
+            "type": "string",
+            "sources": ["jira_issues_raw.json", "jira_issues_clean.parquet", "final_sla_report.parquet"],
+            "description_pt": "Estado final do chamado no Jira (Done, Resolved, Concluído).",
+            "description_en": "Final issue state in Jira (Done, Resolved, Concluded)."
+        },
+        {
+            "field": "issue_type",
+            "type": "string",
+            "sources": ["jira_issues_raw.json", "jira_issues_clean.parquet", "final_sla_report.parquet", "report_tipo_chamado.csv"],
+            "description_pt": "Categoria da demanda (Bug, Story, Task). Chave de agrupamento e join.",
+            "description_en": "Demand category (Bug, Story, Task). Grouping and join key."
+        },
+        {
+            "field": "priority",
+            "type": "string",
+            "sources": ["jira_issues_raw.json", "jira_issues_clean.parquet", "final_sla_report.parquet"],
+            "description_pt": "Nível de criticidade que define o limite de SLA (High, Medium, Low).",
+            "description_en": "Criticality level that defines the SLA threshold (High, Medium, Low)."
+        },
+        {
+            "field": "analista",
+            "type": "string",
+            "sources": ["jira_issues_clean.parquet", "final_sla_report.parquet", "report_analista.csv"],
+            "description_pt": "Nome do técnico responsável. Chave de join para métricas de performance.",
+            "description_en": "Technician's name. Join key for performance metrics."
+        },
+        {
+            "field": "hours_resolution",
+            "type": "float",
+            "sources": ["final_sla_report.parquet", "report_analista.csv", "report_tipo_chamado.csv"],
+            "description_pt": "Tempo de resolução calculado em horas úteis (Business Hours).",
+            "description_en": "Resolution time calculated in business hours."
+        },
+        {
+            "field": "taxa_atendimento_sla",
+            "type": "float",
+            "sources": ["report_analista.csv"],
+            "description_pt": "Percentual de conformidade (Compliance) individual (ex: 0.75 = 75%).",
+            "description_en": "Individual compliance percentage (e.g., 0.75 = 75%)."
+        },
+        {
+            "field": "date",
+            "type": "date",
+            "sources": ["BrasilAPI"],
+            "description_pt": "Data do feriado nacional usada para dedução de horas não úteis.",
+            "description_en": "National holiday date used for non-business hours deduction."
+        },
+        {
+            "field": "is_sla_met",
+            "type": "boolean",
+            "sources": ["final_sla_report.parquet"],
+            "description_pt": "Flag indicativa de cumprimento (True) ou violação (False) do SLA.",
+            "description_en": "Flag indicating SLA compliance (True) or violation (False)."
+        }
+    ],
+    "process_quality_logs": [
+        {
+            "test_id": "Data Lineage Check",
+            "scope": "End-to-End",
+            "logic_pt": "Garante a consistência das chaves de join (id, analista, issue_type) entre as 6 fontes.",
+            "logic_en": "Ensures join key consistency (id, analyst, issue_type) across all 6 sources."
+        },
+        {
+            "test_id": "Holiday Join Logic",
+            "scope": "Transformation",
+            "logic_pt": "Valida se a lista de feriados da BrasilAPI foi aplicada corretamente no cálculo de horas úteis.",
+            "logic_en": "Validates if the BrasilAPI holiday list was correctly applied in the business hours calculation."
+        }
+    ]
 }

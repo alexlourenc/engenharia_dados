@@ -1,95 +1,118 @@
 import pandas as pd
 from pathlib import Path
 import sys
-import os
+import json
+import logging
 from tqdm import tqdm
 
-# Add the src directory to the path to import the SLA calculation module
+# Adding the src directory to the path to import the SLA calculation module
 # Adiciona o diretório src ao path para importar o módulo de cálculo de SLA
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from sla_calculation import calculate_business_hours, get_expected_sla
+
+try:
+    from sla_calculation import calculate_business_hours, get_expected_sla
+except ImportError as e:
+    logging.error(f"❌ Critical Error: Could not import SLA module / Erro crítico: Não foi possível importar o módulo SLA: {e}")
+    sys.exit(1)
+
+# Logging configuration / Configuração de Logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+def load_brazil_holidays(base_dir):
+    """
+    Loads national holidays from a local JSON file (previously fetched from BrasilAPI).
+    Carrega os feriados nacionais de um arquivo JSON local (previamente coletado da BrasilAPI).
+    """
+    holiday_path = base_dir / "data" / "holidays_2026.json"
+    if holiday_path.exists():
+        with open(holiday_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            # Returns a list of strings in YYYY-MM-DD format
+            # Retorna uma lista de strings no formato AAAA-MM-DD
+            return [h['date'] for h in data]
+    logger.warning("⚠️ Holiday file not found. Calculation will proceed without holidays.")
+    return []
 
 def build_gold():
     """
-    Constructs the Gold layer by applying business rules, SLA calculations, and generating reports.
-    Constrói a camada Gold aplicando regras de negócio, cálculos de SLA e gerando relatórios.
+    Constructs the Gold layer by applying business rules, SLA calculations with holidays, and generating reports.
+    Constrói a camada Gold aplicando regras de negócio, cálculos de SLA com feriados e gerando relatórios.
     """
-    # 1. Path and folder configuration
-    # Configuração de caminhos e pastas
+    logger.info("--- 🥇 Starting Gold Construction / Iniciando Construção da Camada Gold ---")
+
+    # 1. Path configuration / Configuração de caminhos
+    # Adjusting base_dir to point to project root
+    # Ajustando base_dir para apontar para a raiz do projeto
     base_dir = Path(__file__).resolve().parents[2]
     input_path = base_dir / "data" / "silver" / "jira_issues_clean.parquet"
     output_dir = base_dir / "data" / "gold"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
     output_path = output_dir / "final_sla_report.parquet"
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("--- 🥇 Starting Gold Construction / Iniciando Construção da Camada Gold ---")
-
-    # 2. Read Silver data and Filter (Premise: Only 'Done' or 'Resolved' for Gold)
-    # Leitura e Filtro (Premissa: Apenas chamados finalizados compõem a Gold)
+    # 2. Data Loading and Filtering / Carregamento e Filtro de Dados
     if not input_path.exists():
-        print(f"❌ Error: Silver file not found at / Erro: Arquivo Silver não encontrado em {input_path}")
+        logger.error(f"❌ Silver file not found / Arquivo Silver não encontrado: {input_path}")
         return
 
     df = pd.read_parquet(input_path)
-    # Filter based on business status
-    # Filtra conforme o status de negócio
-    df_gold = df[df['status'].isin(['Done', 'Resolved'])].copy()
+    
+    # Filter: Only tickets in final status compose the Gold layer
+    # Filtro: Apenas chamados em status final compõem a camada Gold
+    df_gold = df[df['status'].isin(['Done', 'Resolved', 'Concluído'])].copy()
 
     if df_gold.empty:
-        print("⚠️ Warning: No completed tickets found. / Aviso: Nenhum chamado finalizado encontrado.")
+        logger.warning("⚠️ No completed tickets found for processing / Nenhum chamado finalizado encontrado.")
         return
 
-    # 3. Apply SLA Calculation with Progress Bar (tqdm)
-    # Aplicação do Cálculo de SLA com Barra de Progresso (tqdm)
-    print(f"⏳ Processing {len(df_gold)} completed tickets... / Processando chamados...")
+    # 3. Holiday Integration / Integração de Feriados
+    # Load holidays list to pass to the calculation engine
+    # Carrega a lista de feriados para passar ao motor de cálculo
+    holidays_list = load_brazil_holidays(base_dir)
+
+    # 4. SLA Calculation Logic / Lógica de Cálculo de SLA
+    logger.info(f"⏳ Processing {len(df_gold)} tickets... / Processando chamados...")
     
-    # Enable tqdm support for pandas
-    # Habilita o suporte do tqdm para o pandas
     tqdm.pandas(desc="Calculating Business Hours / Calculando Horas Úteis")
     
-    # Calculate resolution time considering business days and holidays
-    # Calcula o tempo de resolução considerando dias úteis e feriados
+    # Passing the holiday list as an argument for accurate business hour calculation
+    # Passando a lista de feriados como argumento para o cálculo preciso de horas úteis
     df_gold['hours_resolution'] = df_gold.progress_apply(
-        lambda x: calculate_business_hours(x['created_at'], x['resolved_at']), axis=1
+        lambda x: calculate_business_hours(
+            x['created_at'], 
+            x['resolved_at'], 
+            holidays=holidays_list
+        ), axis=1
     )
     
-    # Define expected SLA based on priority (High=24h, Medium=72h, Low=120h)
-    # Define o SLA esperado com base na prioridade
     df_gold['sla_expected'] = df_gold['priority'].apply(get_expected_sla)
-    
-    # 4. Fulfillment Indicator (Boolean: True if met, False if violated)
-    # Indicador de Atendimento (Boolean: True se atendeu, False se violou)
     df_gold['is_sla_met'] = df_gold['hours_resolution'] <= df_gold['sla_expected']
 
-    # 5. Final Table Persistence (Parquet format to preserve data types)
-    # Persistência da Tabela Final (Formato Parquet para preservar tipos)
-    df_gold.to_parquet(output_path, index=False)
-    
-    # 6. Generation of Aggregated Reports (Business Requirements)
-    # Geração de Relatórios Agregados (Requisitos de Negócio)
-    
-    # Report 1: Average SLA per Analyst
-    # Relatório 1: SLA Médio por Analista
-    analista_report = df_gold.groupby('analista').agg(
-        qtd_chamados=('id', 'count'),
-        sla_medio_horas=('hours_resolution', 'mean')
-    ).reset_index()
-    analista_report.to_csv(output_dir / "report_analista.csv", index=False)
-    
-    # Report 2: Average SLA per Issue Type
-    # Relatório 2: SLA Médio por Tipo de Chamado
-    tipo_report = df_gold.groupby('issue_type').agg(
-        qtd_chamados=('id', 'count'),
-        sla_medio_horas=('hours_resolution', 'mean')
-    ).reset_index()
-    tipo_report.to_csv(output_dir / "report_tipo_chamado.csv", index=False)
-    
-    print("-" * 30)
-    print(f"✅ Gold layer completed successfully! / Camada Gold concluída!")
-    print(f"📂 Master Table / Tabela Mestre: {output_path}")
-    print(f"📊 Analyst Report / Relatório Analista: report_analista.csv")
-    print(f"📊 Type Report / Relatório Tipo: report_tipo_chamado.csv")
+    # 5. Persistence and Reporting / Persistência e Relatórios
+    try:
+        # Saving master table / Salvando tabela mestre
+        df_gold.to_parquet(output_path, index=False)
+        
+        # Aggregated Report 1: Analyst Performance / Performance por Analista
+        analista_report = df_gold.groupby('analista').agg(
+            qtd_chamados=('id', 'count'),
+            sla_medio_horas=('hours_resolution', 'mean'),
+            taxa_atendimento_sla=('is_sla_met', 'mean')
+        ).reset_index()
+        analista_report.to_csv(output_dir / "report_analista.csv", index=False)
+        
+        # Aggregated Report 2: Performance by Issue Type / Performance por Tipo de Chamado
+        tipo_report = df_gold.groupby('issue_type').agg(
+            qtd_chamados=('id', 'count'),
+            sla_medio_horas=('hours_resolution', 'mean')
+        ).reset_index()
+        tipo_report.to_csv(output_dir / "report_tipo_chamado.csv", index=False)
+
+        logger.info(f"✅ Gold layer completed / Camada Gold concluída! Outputs: {output_dir}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error saving Gold outputs / Erro ao salvar saídas da Gold: {e}")
 
 if __name__ == "__main__":
     build_gold()

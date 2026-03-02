@@ -1,6 +1,6 @@
 {
-    "execution_date": "2026-03-01 09:52:06",
-    "total_time": 50.87,
+    "execution_date": "2026-03-01 23:41:31",
+    "total_time": 1.53,
     "workflow": {
         "bronze": {
             "step": 1,
@@ -18,11 +18,6 @@
             "step": 2,
             "phase": "Silver",
             "tasks": [
-                {
-                    "name": "Data load",
-                    "status": "completed",
-                    "records": 1000
-                },
                 {
                     "name": "Cleaning",
                     "status": "completed",
@@ -43,9 +38,7 @@
                     "name": "SLA Calculation",
                     "status": "completed",
                     "outputs": [
-                        "C:\\Users\\Alex Lourenço\\Desktop\\project-root\\data\\gold\\final_sla_report.parquet",
-                        "report_analista.csv",
-                        "report_tipo_chamado.csv"
+                        "C:\\Users\\Alex Lourenço\\Desktop\\project-root\\data\\gold\\final_sla_report.parquet"
                     ]
                 }
             ]
@@ -55,14 +48,9 @@
             "phase": "Quality",
             "tasks": [
                 {
-                    "name": "Null Check",
+                    "name": "Audit",
                     "status": "completed",
-                    "result": "No nulls found"
-                },
-                {
-                    "name": "Chronological Validation",
-                    "status": "completed",
-                    "result": "All records validated"
+                    "result": "Integrity Checked"
                 }
             ]
         }

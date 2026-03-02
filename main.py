@@ -1,21 +1,46 @@
+"""
+PROJECT: JIRA SLA Management Console
+AUTHOR: Alex Lourenço (https://github.com/alexlourenc/)
+DESCRIPTION: Streamlit interface for executive dashboard, pipeline audit logs, and data governance.
+"""
 import sys
 import os
 import time
 import json
+import logging
 import pandas as pd
 from pathlib import Path
 
+# Setup logging for background monitoring
+# Configura o logging para monitoramento em segundo plano
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+# Constants for project paths using absolute resolution
+# Constantes para os caminhos do projeto usando resolução absoluta
+PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_PATHS = {
+    "bronze": PROJECT_ROOT / "data" / "bronze" / "jira_issues_raw.json",
+    "silver": PROJECT_ROOT / "data" / "silver" / "jira_issues_clean.parquet",
+    "gold": PROJECT_ROOT / "data" / "gold" / "final_sla_report.parquet",
+    "stats": PROJECT_ROOT / "data" / "pipeline_stats.json"
+}
+
 def clear_terminal():
+    """Clears the terminal screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def ensure_structure():
-    folders = ['data/bronze', 'data/silver', 'data/gold']
-    for folder in folders:
-        os.makedirs(folder, exist_ok=True)
-        Path(os.path.join(folder, '.gitkeep')).touch()
+    """Ensures that the required Medallion folder structure exists."""
+    # Garante que a estrutura de pastas Medalhão necessária exista.
+    for folder in ['data/bronze', 'data/silver', 'data/gold']:
+        path = PROJECT_ROOT / folder
+        path.mkdir(parents=True, exist_ok=True)
+        (path / '.gitkeep').touch()
 
+# Initialize environment / Inicializa o ambiente
 ensure_structure()
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+sys.path.append(str(PROJECT_ROOT / "src"))
 
 try:
     from bronze.ingest_bronze import ingest_bronze
@@ -23,164 +48,85 @@ try:
     from gold.build_gold import build_gold
     from validate_pipeline import validate_data_quality
 except ImportError as e:
-    print(f"❌ Error importing modules: {e}")
+    logger.error(f"❌ Import Error / Erro de Importação: {e}")
     sys.exit(1)
 
 def get_actual_counts():
-    counts = {"bronze": 0, "silver": 0, "gold": 0}
-    p_bronze = Path('data/bronze/jira_issues_raw.json')
-    p_silver = Path('data/silver/jira_issues_clean.parquet')
-    
-    if p_bronze.exists():
+    """Calculates record counts for the audit report."""
+    # Calcula a contagem de registros para o relatório de auditoria.
+    counts = {"bronze": 0, "silver": 0}
+    if PROJECT_PATHS["bronze"].exists():
         try:
-            with open(p_bronze, 'r', encoding='utf-8') as f:
+            with open(PROJECT_PATHS["bronze"], 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                if isinstance(data, list):
-                    counts["bronze"] = len(data)
-                elif isinstance(data, dict):
-                    issues = data.get('issues') or data.get('values') or data.get('data')
-                    counts["bronze"] = len(issues) if isinstance(issues, list) else 1
+                issues = data.get('issues') or data.get('values') or data
+                counts["bronze"] = len(issues) if isinstance(issues, list) else 0
         except: pass
-
-    if p_silver.exists():
+    if PROJECT_PATHS["silver"].exists():
         try:
-            counts["silver"] = len(pd.read_parquet(p_silver))
+            counts["silver"] = len(pd.read_parquet(PROJECT_PATHS["silver"]))
         except: pass
-            
     return counts
 
 def save_pipeline_stats(results, total_time):
-    """Gera o JSON de auditoria no formato exato solicitado."""
+    """Saves all process steps and metrics to pipeline_stats.json."""
+    # Salva todos os passos do processo e métricas no pipeline_stats.json.
     counts = get_actual_counts() 
     
-    path_b = str(Path("data/bronze/jira_issues_raw.json").absolute())
-    path_s = str(Path("data/silver/jira_issues_clean.parquet").absolute())
-    path_g = str(Path("data/gold/final_sla_report.parquet").absolute())
+    def get_status_text(index):
+        if index < len(results):
+            return "completed" if results[index][2] == "✔️" else "failed"
+        return "failed"
 
-    status_bronze = "completed" if results[0][2] == "✔️" else "failed"
-    status_silver = "completed" if results[1][2] == "✔️" else "failed"
-    status_gold   = "completed" if results[2][2] == "✔️" else "failed"
-    status_quality = "completed" if len(results) > 3 and results[3][2] == "✔️" else "failed"
-
-    # Cálculo conforme sua lógica de records vs invalid
-    invalid_qty = counts["bronze"] - counts["silver"]
+    invalid_qty = max(0, counts["bronze"] - counts["silver"])
 
     stats = {
         "execution_date": time.strftime("%Y-%m-%d %H:%M:%S"),
         "total_time": total_time,
         "workflow": {
-            "bronze": {
-                "step": 1,
-                "phase": "Bronze",
-                "tasks": [
-                    {
-                        "name": "Ingestion",
-                        "status": status_bronze,
-                        "records": counts["bronze"],
-                        "file": path_b
-                    }
-                ]
-            },
-            "silver": {
-                "step": 2,
-                "phase": "Silver",
-                "tasks": [
-                    {"name": "Data load", "status": status_silver, "records": counts["bronze"]},
-                    {"name": "Cleaning", "status": status_silver, "invalid_records_removed": invalid_qty},
-                    {"name": "file", "status": status_silver, "file": path_s}
-                ]
-            },
-            "gold": {
-                "step": 3,
-                "phase": "Gold",
-                "tasks": [
-                    {
-                        "name": "SLA Calculation",
-                        "status": status_gold,
-                        "outputs": [
-                            path_g,
-                            "report_analista.csv",
-                            "report_tipo_chamado.csv"
-                        ]
-                    }
-                ]
-            },
-            "quality": {
-                "step": 4,
-                "phase": "Quality",
-                "tasks": [
-                    {
-                        "name": "Null Check",
-                        "status": status_quality,
-                        "result": "No nulls found" if status_quality == "completed" else "Failed"
-                    },
-                    {
-                        "name": "Chronological Validation",
-                        "status": status_quality,
-                        "result": "All records validated" if status_quality == "completed" else "Validation Error"
-                    }
-                ]
-            }
+            "bronze": {"step": 1, "phase": "Bronze", "tasks": [{"name": "Ingestion", "status": get_status_text(0), "records": counts["bronze"], "file": str(PROJECT_PATHS["bronze"].absolute())}]},
+            "silver": {"step": 2, "phase": "Silver", "tasks": [{"name": "Cleaning", "status": get_status_text(1), "invalid_records_removed": invalid_qty}, {"name": "file", "status": get_status_text(1), "file": str(PROJECT_PATHS["silver"].absolute())}]},
+            "gold": {"step": 3, "phase": "Gold", "tasks": [{"name": "SLA Calculation", "status": get_status_text(2), "outputs": [str(PROJECT_PATHS["gold"].absolute())]}]},
+            "quality": {"step": 4, "phase": "Quality", "tasks": [{"name": "Audit", "status": get_status_text(3), "result": "Integrity Checked"}]}
         },
+        # Structured log from all steps / Log estruturado de todos os passos
         "steps": [{"STEP": r[0], "DESCRIPTION": r[1], "STATUS": r[2]} for r in results]
     }
     
-    with open('data/pipeline_stats.json', 'w', encoding='utf-8') as f:
+    with open(PROJECT_PATHS["stats"], 'w', encoding='utf-8') as f:
         json.dump(stats, f, indent=4, ensure_ascii=False)
 
-def print_summary(results, total_time):
-    clear_terminal()
-    print("="*60)
-    print("🚀 JIRA DATA ENGINEERING PIPELINE")
-    print("="*60)
-    header = f"{'STEP':<10} | {'DESCRIPTION':<35} | {'STATUS'}"
-    print(header)
-    print("-" * len(header))
-    for step, desc, status in results:
-        print(f"{step:<10} | {desc[:35]:<35} | {status}")
-    print("-" * len(header))
-    print(f"✅ COMPLETED IN {total_time}s | Dashboard: streamlit run app.py\n")
-
 def run_pipeline():
+    """End-to-end orchestration."""
+    # Orquestração de ponta a ponta.
     results = []
-    clear_terminal()
-    print("="*60)
-    print("🔍 RUNNING AUTOMATED PIPELINE")
-    print("="*60)
-
     start_time = time.time()
 
-    # Step 1: BRONZE
     if ingest_bronze():
         results.append(["BRONZE", "Ingestion completed.", "✔️"])
-    else:
-        results.append(["BRONZE", "Ingestion failed.", "❌"])
-        return
+        try:
+            run_silver_transformation()
+            results.append(["SILVER", "Cleaning & Normalization.", "✔️"])
+            try:
+                build_gold()
+                results.append(["GOLD", "SLA Rules Applied.", "✔️"])
+            except Exception as e: results.append(["GOLD", f"Gold Error: {e}", "❌"])
+        except Exception as e: results.append(["SILVER", f"Silver Error: {e}", "❌"])
+    else: results.append(["BRONZE", "Ingestion failed.", "❌"])
 
-    # Step 2: SILVER
-    try:
-        run_silver_transformation()
-        results.append(["SILVER", "Cleaning & Normalization.", "✔️"])
-    except Exception as e:
-        results.append(["SILVER", f"Error: {e}", "❌"])
-
-    # Step 3: GOLD
-    try:
-        build_gold()
-        results.append(["GOLD", "SLA Rules Applied.", "✔️"])
-    except Exception as e:
-        results.append(["GOLD", f"Error: {e}", "❌"])
-
-    # Step 4: QUALITY
     try:
         validate_data_quality()
         results.append(["QUALITY", "Integrity audit finished.", "✔️"])
-    except Exception as e:
-         results.append(["QUALITY", f"Audit Alert: {e}", "⚠️"])
+    except Exception as e: results.append(["QUALITY", f"Audit Alert: {e}", "⚠️"])
     
     total_time = round(time.time() - start_time, 2)
     save_pipeline_stats(results, total_time)
-    print_summary(results, total_time)
+    
+    clear_terminal()
+    print("="*60)
+    print("🚀 PIPELINE FINISHED & LOGS SAVED")
+    logger.info("Then run / Depois execute: streamlit run app.py")
+    
 
 if __name__ == "__main__":
     run_pipeline()
